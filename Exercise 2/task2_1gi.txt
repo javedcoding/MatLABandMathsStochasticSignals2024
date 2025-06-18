@@ -1,0 +1,102 @@
+clear all; 
+close all; 
+clc;
+
+f = 5;                  % Frequency in Hz
+fs = 100;               % Sampling frequency in Hz
+T = 10;                 % Total time in seconds
+t = 0:1/fs:T-1/fs;      % Time vector
+N = length(t);          % Number of samples
+
+%% (a) Generate one realization with random phase phi(e)
+% phi = 2*pi*rand();      % Uniformly distributed phase in [0, 2pi]
+phi = 0;
+x = sin(2*pi*f*t + phi);
+
+% Plot the signal for 0 <= t <= 0.5 s
+figure;
+subplot(2,2,1)
+plot(t(t <= 0.5), x(t <= 0.5), 'b');
+title('One Realization of x(\epsilon,t)');
+xlabel('Time [s]');
+ylabel('Amplitude');
+grid on;
+xlim([0 0.5]);
+
+%% (g) Generate 3 pattern functions with random phase
+subplot(2,2,2)
+hold on;
+colors = {'r', 'g', 'b'};
+legendEntries = {};
+
+for i = 1:3
+    phi_i = 2*pi*rand();
+    x_i = sin(2*pi*f*t + phi_i);
+    plot(t(t <= 0.5), x_i(t <= 0.5), colors{i});
+    legendEntries{i} = ['Pattern ' num2str(i)];
+end
+
+title('Three Pattern Functions x(e,t)');
+xlabel('Time [s]');
+ylabel('Amplitude');
+legend(legendEntries);
+grid on;
+xlim([0 0.5]);
+
+%% (h) Generate 100 pattern functions
+phi_all = 2*pi*rand(100, 1);        % Random phases for 100 patterns
+x_all = zeros(100, N);
+
+for i = 1:100
+    x_all(i, :) = sin(2*pi*f*t + phi_all(i));
+end
+
+% Ensemble average at specific time points
+t_idx_1s = find(t >= 1, 1);
+t_idx_2_3s = find(t >= 2.3, 1);
+t_idx_8_1s = find(t >= 8.1, 1);
+
+ensemble_avg_1s = mean(x_all(:, t_idx_1s));
+ensemble_avg_2_3s = mean(x_all(:, t_idx_2_3s));
+ensemble_avg_8_1s = mean(x_all(:, t_idx_8_1s));
+
+fprintf('Ensemble avg at t = 1.0 s: %.5f\n', ensemble_avg_1s);
+fprintf('Ensemble avg at t = 2.3 s: %.5f\n', ensemble_avg_2_3s);
+fprintf('Ensemble avg at t = 8.1 s: %.5f\n', ensemble_avg_8_1s);
+
+% Time averages of pattern function 5, 20, 75
+time_avg_5 = mean(x_all(5, :));
+time_avg_20 = mean(x_all(20, :));
+time_avg_75 = mean(x_all(75, :));
+
+fprintf('Time avg of pattern 5: %.5f\n', time_avg_5);
+fprintf('Time avg of pattern 20: %.5f\n', time_avg_20);
+fprintf('Time avg of pattern 75: %.5f\n', time_avg_75);
+
+%% (i) Wiener-Khintchine Theorem for pattern #20
+x20 = x_all(20, :);
+
+% Autocorrelation
+[acf, lags] = xcorr(x20, 'biased');
+lags_sec = lags / fs;
+
+% Power Spectral Density (PSD)
+PSD = abs(fftshift(fft(acf)));
+f_axis = linspace(-fs/2, fs/2, length(PSD));
+
+% Plot ACF and PSD
+
+subplot(2,2,3);
+plot(lags_sec, acf);
+title('Autocorrelation of Pattern #20');
+xlabel('Lag \tau [s]');
+ylabel('ACF');
+grid on;
+
+subplot(2,2,4);
+plot(f_axis, PSD);
+title('Power Spectral Density via Wiener-Khintchine');
+xlabel('Frequency [Hz]');
+ylabel('Power');
+xlim([-10 10]);
+grid on;

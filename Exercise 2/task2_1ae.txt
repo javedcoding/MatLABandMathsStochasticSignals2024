@@ -1,0 +1,124 @@
+close all;
+clc;
+clear all;
+
+% ----------------------------------
+% PART A: Generating the sine wave  
+% ----------------------------------
+
+freq = 5;  % Given the frequency of the signal
+sampling_freq = 100; % for sampling the frequency
+
+% here the actual value will be calculated in this way 0:1/100:10 or
+% (0:N)/Fs where N=(An-Ao)*Fs
+time = 0:1/sampling_freq:10;
+
+% value of y axis
+x = sin(2*pi*freq*time);
+
+% ploting the signal
+subplot(4,2,1);
+plot(time, x); 
+xlabel('Time (seconds)');
+ylabel('Amplitude');
+title('Sine Signal');
+% xlim([0 0.5]);
+grid on;
+
+% ---------------------------------------------
+% PART B: Rectangular window and signal cut out
+% ---------------------------------------------
+
+rectWindow = zeros(size(time));
+rectWindow((time >= 2) & (time <= 5)) = 1;
+
+% Rectangular window plot
+subplot(4,2,3);
+plot(time, rectWindow, 'r');
+title("Rectangular Window");
+xlabel("Time");
+ylabel("Amplitude");
+ylim([-1.5 1.5]), xlim([0 7])
+grid;
+
+
+rectSignal = x.*rectWindow; % using rectangular window on sinosodal signal
+subplot(4,2,5);
+plot(time, rectSignal, 'r');
+title("Cut out of signal with rectangular pulse");
+xlabel("Time");
+ylabel("Amplitude");
+ylim([-1.5 1.5]), xlim([0 10])
+grid;
+
+% ---------------------------------------------------------------
+% PART C: FFT of Sine Wave on which rectangular window is applied
+% ---------------------------------------------------------------
+fft_of_rect_signal = fftshift(fft(rectSignal));
+freq_range = sampling_freq * (-length(rectSignal)/2:(length(rectSignal)/2)-1) / length(rectSignal);
+
+N = 300;  % Number of points for FFT
+% fft_of_rect_signal = fft(rectSignal, N);
+% freq_range = sampling_freq * (0:(N/2)-1) / N;  % Frequency axis for plotting
+
+% Plotting FFT
+subplot(4,2,7);
+plot(freq_range, abs(fft_of_rect_signal));
+% plot(freq_range, abs(fft_of_rect_signal(1:N/2)));
+title('FFT of Rectangular Windowed Signal');
+xlabel('Frequency (Hz)');
+ylabel('Magnitude');
+xlim([-15 15])
+grid on;
+
+
+% -----------------------------------------
+% PART D: Hamming Window and signal cut out
+% -----------------------------------------
+t_cut = 2:1/sampling_freq:5; % Time vector for cut-out signal
+hammingWindow = [zeros(1, 2*sampling_freq) hamming(length(t_cut))' zeros(1, 5*sampling_freq)];
+
+
+
+% Hamming window plot
+subplot(4,2,4);
+plot(time, hammingWindow, 'g');
+title("Hamming Window");
+xlabel("Time");
+ylabel("Amplitude");
+ylim([-1.5 1.5]), xlim([-1 11])
+grid on;
+
+% Hamming windowed signal
+hammingSignal = x.*hammingWindow;
+
+subplot(4,2,6);
+plot(time, hammingSignal, 'g');
+title("Cut out of Signal according to Hamming window");
+xlabel("Time");
+ylabel("Amplitude");
+ylim([-1.5 1.5]), xlim([-1 11])
+grid on;
+
+% ---------------------------------------------------------------
+% PART E: FFT of Sine Wave on which hamming window is applied
+% ---------------------------------------------------------------
+L_hamm = length(hammingSignal);
+fft_of_hamm_signal = fftshift(fft(hammingSignal));
+f_axis = sampling_freq * (-L_hamm/2:(L_hamm/2)-1) / L_hamm;
+
+% fft_of_hamm_signal = fft(hammingSignal, N);
+% f_axis = sampling_freq * (0:(N/2)-1) / N;  % Frequency axis for plotting
+
+% Plotting FFT
+subplot(4,2,8);
+plot(f_axis, abs(fft_of_hamm_signal));
+% plot(f_axis, abs(fft_of_hamm_signal(1:N/2)));
+title('FFT of Hamming Windowed Signal');
+xlabel('Frequency (Hz)');
+ylabel('Magnitude');
+xlim([-15 15]);
+grid on;
+
+%Because of hamming windows there are sidelobes and the power in the base
+%frequency is lesser than the reactangular one. 

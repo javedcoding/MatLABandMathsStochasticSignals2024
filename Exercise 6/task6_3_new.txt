@@ -1,0 +1,72 @@
+clear all
+close all
+clc;
+
+%% Parameters
+N = 300;                 % Total number of samples
+true_value = 3.5;        % Constant true value
+true_value_signal = ones(1,N)*true_value; %actual constant value signal
+%% Create Measured Signal z(k)
+z = zeros(1, N);
+
+% 1–100: Gaussian noise, max amplitude 0.5
+z(1:100) = true_value + 0.5 * randn(1, 100);
+
+% 101–200: Gaussian noise, max amplitude 1.0
+z(101:200) = true_value + 1.0 * randn(1, 100);
+
+% 201–250: No noise
+z(201:250) = true_value;
+
+% 251–300: Uniform noise in [-2, 2]
+z(251:300) = true_value + (rand(1, 50) * 4 - 2);
+
+%% Kalman Filter Initialization
+x_est = zeros(1, N);     % Estimated signal
+P = zeros(1, N);         % Error covariance
+x_est(1) = 0;            % Initial state estimate
+P(1) = 1;                % Initial error covariance
+Q = 0.0;                 % Process noise covariance (state is constant)
+R = 1.0;                 % Measurement noise covariance
+x_pred_array = zeros(1, N);  % Store predictions
+%% Kalman Filter Loop
+for k = 2:N
+    % Prediction Step
+    x_pred = x_est(k-1);
+    x_pred_array(k) = x_pred;  % Store prediction
+    P_pred = P(k-1) + Q;
+    
+    % Update Step
+    K = P_pred / (P_pred + R);             % Kalman Gain
+    x_est(k) = x_pred + K * (z(k) - x_pred); % State update
+    P(k) = (1 - K) * P_pred;               % Error covariance update
+end
+
+%% Compute Error Signal
+error_signal = z - x_pred_array;
+
+%% Plot the constant value, the signal, the prediction and the error signal
+figure;
+plot(1:N, true_value_signal, 'k--', 'LineWidth', 1.5); % Constant value plot
+hold on; 
+plot(1:N, z, 'r'); % Noisy signal
+plot(1:N, x_pred_array, 'b'); % Predicted signal
+plot(1:N, error_signal, 'g'); % Error signal
+legend('Constant Value', 'Noisy Signal', 'Prediction', 'Error Signal');
+xlabel('Sample Number');
+ylabel('Value');
+title('Kalman Filter for Noise Suppression');
+grid on;
+
+%% Plot the constant value, the prediction, the kalman estimation and the error signal
+figure;
+plot(1:N, true_value_signal, 'k--', 'LineWidth', 1.5); % Constant value plot
+hold on;
+plot(1:N, x_pred_array, 'b'); % Predicted signal
+plot(1:N, x_est, 'r'); % Kalman Estimation
+plot(1:N, error_signal, 'g'); % Error signal
+legend('Constant Value', 'Prediction', 'Kalman Estimate', 'Error Signal');
+xlabel('Sample Number');
+ylabel('Value');
+title('Kalman Filter for Noise Suppression');
+grid on;

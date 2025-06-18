@@ -1,0 +1,65 @@
+clear all
+close all
+clc;
+
+% === Read original signal ===
+data = readmatrix('testsignal for exc#4.csv'); 
+signal = data(1, :); 
+N = length(signal);
+fs = 500;
+t = (0:N-1)/fs;
+
+% === Plot original signal ===
+figure;
+subplot(3,1,1);
+plot(t, signal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Original Signal');
+
+% === PSD calculation using Wiener-Khintchine theorem ===
+[ACF, lag] = xcorr(signal, 'biased');
+tau = lag/fs;
+PSD = abs(fftshift(fft(ACF)));
+freq = linspace(-fs/2, fs/2, length(PSD));
+
+% === Find main frequency ===
+positive_freqs = freq(freq >= 0);
+positive_PSD = PSD(freq >= 0);
+[~, max_idx] = max(positive_PSD);
+main_frequency = ceil(positive_freqs(max_idx));
+disp(['Main frequency component: ' num2str(main_frequency) ' Hz']);
+
+% === Signal Synthesis ===
+fs_synth = 2000;  % sampling frequency for synthesized signal
+duration = N / fs; % same length in seconds as original signal
+N_synth = round(duration * fs_synth);
+t_synth = (0:N_synth-1)/fs_synth;
+
+synth_signal = cos(2 * pi * main_frequency * t_synth);
+
+% === Plot first 100 samples of synthesized signal ===
+subplot(4,1,2);
+plot(t_synth(1:100), synth_signal(1:100), 'b');
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('First 100 samples of Synthesized Cosine Signal');
+
+% === Plot first 100 samples of synthesized signal ===
+subplot(4,1,3);
+plot(t_synth, synth_signal, 'b');
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Full Synthesized Cosine Signal');
+
+
+% === Autocorrelation of synthesized signal ===
+[ACF_synth, lag_synth] = xcorr(synth_signal, 'biased');
+tau_synth = lag_synth / fs_synth;
+
+subplot(4,1,4);
+plot(tau_synth, ACF_synth);
+xlabel('\tau (s)');
+ylabel('Autocorrelation');
+title('ACF of Synthesized Cosine Signal');
+xlim([-1, 1]);

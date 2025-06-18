@@ -1,0 +1,52 @@
+clear all
+close all
+clc;
+
+% Parameters
+%Calculation for the window length an = a + (N)*1/Fs
+f = 1; % Frequency in Hz
+Fs = 10; % Sampling frequency in Hz
+An = 5;
+Ao = 0;
+N = (An-Ao)*Fs; % Number of samples 
+t = (0:N)/Fs; % Time vector for sinewave
+
+% Signal
+x = sin(2*pi*f*t);
+
+% (a)
+%Plot the sinewave
+figure;
+subplot(2, 2, 1);
+plot(t, x);
+title("Sinewave")
+xlim([-1 7])
+xlabel("Time [s]")
+ylabel("Amplitude")
+grid;
+
+% (b)
+
+%Find the correlation
+[acr, lags] = xcorr(x);
+tau = lags/Fs;
+
+%Plot the ACF signal
+subplot(2, 2, 2)
+plot(tau, acr)
+title("ACR of x")
+xlabel("tau")
+ylabel("sxx")
+grid;
+disp(acr)
+
+% (c)
+%Plot the correlated signal
+subplot(2, 2, 3)
+plot(tau, acr)
+xlim([-3 5])
+title("Auto Correlation of x")
+xlabel("tau")
+ylabel("sxx")
+grid;
+disp(acr)

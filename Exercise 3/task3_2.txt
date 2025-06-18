@@ -1,0 +1,86 @@
+clear all
+close all
+clc;
+
+%Signal Frequencies
+f1 = 30;
+f2 = 50;
+
+%Sampling Frequency
+fs = 500; % for a, b, c, d, g
+fs2 = 100; % for e
+% fs2 = 150; % for e (extra just to show only nyquest rule is not enough)
+% fs2 = 80; % for f
+
+%Signals axis Calculation
+startP = 0;
+endP = 0.06;
+
+buffer_length = 2048;
+% buffer_length = 8192; % though noise level is higher Power of the signal is significantly higher
+
+t = (0:1:buffer_length-1)/fs;
+t2 = (0:1:buffer_length-1)/fs2;
+% %Different Approach 1
+% t = startP:1/fs:endP;
+% N = length(t);
+
+%Noise Amplitudes
+% alpha = 0.1;
+% alpha = 0.8; % Too noisy but has not much effect on PSD 
+% alpha = 2.0; % Too much noisy and signal power is significantly down specially in lower frequency range 
+alpha = 0.3; % for e, f, g
+
+%Generation of noise and then the signal
+noise = alpha * randn(1, length(t)); %normally distributed noise
+noise2 = alpha * randn(1, length(t2));
+% noise = alpha * (rand(size(t)) - 0.5); %uniformly distributed noise
+
+signal = sin(2*pi*f1*t) + sin(2*pi*f2*t);
+signal_with_noise = signal + noise;
+
+signal2 = sin(2*pi*f1*t2) + sin(2*pi*f2*t2);
+signal_with_noise2 = signal2 + noise2;
+
+% Plot time signal
+figure;
+subplot(3,1,1);
+plot(t, signal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Sampled Time Signal');
+xlim([startP, endP]);
+
+% Plot time signal with noise
+subplot(3,1,2);
+plot(t, signal_with_noise);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Sampled Time Signal with noise');
+xlim([startP, endP]);
+
+
+%Calculation of PSD using the Wiener-Khintchine theorem
+[signal_corr, lag] = xcorr(signal_with_noise, 'biased');
+PSD = abs(fftshift(fft(signal_corr))) / buffer_length;
+positiveFreq = (-fs/2):(fs/length(lag)):(fs/2 - fs/length(lag)); 
+
+%for seeing the differences in e, f, g
+[signal_corr2, lag2] = xcorr(signal_with_noise2, 'biased');
+PSD2 = abs(fftshift(fft(signal_corr2))) / buffer_length;
+positiveFreq2 = (-fs2/2):(fs2/length(lag2)):(fs2/2 - fs2/length(lag2)); 
+
+% Plot PSD
+subplot(3,1,3);
+% plot(freq, PSD);
+plot(positiveFreq, PSD, 'blue', positiveFreq2, PSD2, 'red');
+% plot(positiveFreq, 10*log10(PSD)); % only for logarithmic scale 
+xlabel('Frequency (Hz)');
+ylabel('Power Spectral Density');
+% ylabel('Power Spectral Density in dB'); % only for logarithmic scale 
+title('Power Spectral Density (PSD)');
+xlim([0, fs/2]);
+
+
+% (b) maximum length of signal
+% Duration = Number of samples/Sampling frequency ​= 2048/500 = 4.096s​

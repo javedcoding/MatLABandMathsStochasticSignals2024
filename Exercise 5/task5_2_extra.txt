@@ -1,0 +1,61 @@
+clc; 
+clear; 
+close all;
+
+%% Parameters
+Fs = 1000;              % Sampling frequency (Hz)
+T = 1/Fs;               % Sampling period
+L = 4096;               % Number of samples (buffer length)
+t = (0:L-1)*T;          % Time vector (0 to 4.096 sec)
+f = 10;                                
+M = 50;                 % Wiener filter order
+
+%% Function to manually apply Wiener filter
+function y = manual_wiener_filter(x, d, M)
+    N = length(x);
+    
+    % Autocorrelation of noisy signal
+    r_xx = xcorr(x, M-1, 'biased');
+    rr = r_xx(M:end);  % Keep lags 0 to M-1
+    R = toeplitz(rr);  % Autocorrelation matrix (M x M)
+
+    % Cross-correlation between desired signal and input
+    r_dx = xcorr(d, x, M-1, 'biased');
+    P = r_dx(M:end);   % Keep lags 0 to M-1
+
+    % Wiener filter weights
+    W = inv(R) * P';
+
+    % Apply FIR Wiener filter
+    y = zeros(1, N);
+    for i = M:N
+        segment = x(i:-1:i-M+1);
+        y(i) = W' * segment';
+    end
+end
+
+%% Function to generate signal with noise
+function [d, x] = generate_signal(alpha, noise_type, t, f)
+    d = sin(2*pi*f*t);  % Clean signal
+    if strcmp(noise_type, 'normal')
+        noise = randn(size(t));
+    elseif strcmp(noise_type, 'uniform')
+        noise = (rand(size(t)) - 0.5) * 2;  % Uniform in [-1, 1]
+    else
+        error('Unknown noise type');
+    end
+    x = d + alpha * noise;
+end
+
+%% --- Part Extra: α = 0.2, f=10Hz, M=50 Normal Noise ---
+alpha = 0.2;
+[d, x] = generate_signal(alpha, 'normal', t, f);
+y = manual_wiener_filter(x, d, M);
+
+figure;
+subplot(3,1,1); plot(t, d); title('Original Signal (0–1s)');
+ylabel('Amplitude'); grid on;
+subplot(3,1,2); plot(t, x); title('Noisy Signal (\alpha = 0.2, normal)');
+ylabel('Amplitude'); grid on;
+subplot(3,1,3); plot(t, y); title('Wiener Filtered Signal (manual)');
+xlabel('Time (s)'); ylabel('Amplitude'); grid on;

@@ -1,0 +1,45 @@
+clear all; 
+close all;
+clc;
+%% True Constant Value
+true_value = 4;
+N = 100;                      % Number of time steps
+measurement_noise_std = 1.0; % Standard deviation of measurement noise
+
+%% Simulate Noisy Measurements
+z = true_value + measurement_noise_std * randn(1, N);  % z_k = x_k + v_k
+
+%% Kalman Filter Initialization
+x_est = zeros(1, N);   % Estimated value of the state
+P = zeros(1, N);       % Estimated error covariance
+
+% Initial guesses
+x_est(1) = 0;          % Initial estimate
+P(1) = 1;              % Initial error covariance
+
+Q = 0.0;               % Process noise covariance (0 because state is constant)
+R = measurement_noise_std^2;  % Measurement noise covariance
+
+%% Kalman Filter Loop
+for k = 2:N
+    % Prediction Step
+    x_pred = x_est(k-1);     % Predicted state
+    P_pred = P(k-1) + Q;     % Predicted error covariance
+
+    % Update Step
+    K = P_pred / (P_pred + R);                 % Kalman Gain
+    x_est(k) = x_pred + K * (z(k) - x_pred);   % Updated state estimate
+    P(k) = (1 - K) * P_pred;                   % Updated error covariance
+end
+
+%% Plot Results
+figure;
+plot(1:N, z, 'r.', 'DisplayName', 'Noisy measurements');
+hold on;
+plot(1:N, x_est, 'b-', 'LineWidth', 2, 'DisplayName', 'Kalman estimate');
+yline(true_value, 'k--', 'LineWidth', 2, 'DisplayName', 'True value');
+xlabel('Time Step');
+ylabel('Value');
+legend;
+title('Kalman Filter Estimating a Constant');
+grid on;
